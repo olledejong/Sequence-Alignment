@@ -16,7 +16,7 @@ using namespace std;
 using namespace chrono;
 
 // Globals
-int gapPenalty;
+int gapPenalty, matchScore, mismatchScore;
 
 // Map for base-wise match scores. Purine -> Purine or Pyrimidine -> Pyrimidine swaps produce a smaller penalty
 map<pair<char,char>, int> baseWiseScore {
@@ -63,8 +63,9 @@ vector<vector<int>> needlemanWunsch(const string &SeqA, const string &SeqB) {
     // Loop through every cell except for the already filled first row and column. This is done column by column.
     for (int i = 1; i <= lengthA; i++) {
         for (int j = 1; j <= lengthB; j++) {
-            // grab the score for the two compared chars from the map
-            int S = baseWiseScore[{SeqA[i - 1], SeqB[j - 1]}];
+            // If the previous characters are equal, assign S to matchScore (1), else to mismatchScore (-1)
+            bool charsMatch = SeqA[i - 1] == SeqB[j - 1];
+            int S = charsMatch ? matchScore : -mismatchScore;
             // Check which movement (down, right or diagonal) results in the highest score for the iterated cell.
             // and set the iterated cell to that value. There are three options:
             // 1. A match/mismatch results in the highest score (previous diagonal + matchScore or - mismatchScore)
@@ -137,9 +138,9 @@ pair<string,string> getAltAlignment(const vector<vector<int>> &nwMatrix,
             iA--;
             // compare two characters
         } else {
-            // if the next characters of strings are equal, set S = matchScore, else S = mismatchScore
-            // grab the score for the two compared chars from the map
-            int S = baseWiseScore[{SeqA[iA - 1], SeqB[iB - 1]}];
+            // If the previous characters are equal, assign S to matchScore (1), else to mismatchScore (-1)
+            bool charsMatch = SeqA[iA - 1] == SeqB[iB - 1];
+            int S = charsMatch ? matchScore : -mismatchScore;
             // if the previous diagonal cell + S is equal to the iterated cell, then this must be the
             if (nwMatrix[iA][iB] == (nwMatrix[iA - 1][iB - 1] + S )) {
                 altOutA += SeqA[iA - 1];
@@ -194,8 +195,9 @@ vector<pair<string, string>> getAlignment(const vector<vector<int>> &nwMatrix, c
             iA--;
             // compare two characters
         } else {
-            // grab the score for the two compared chars from the map
-            int S = baseWiseScore[{SeqA[iA - 1], SeqB[iB - 1]}];
+            // If the previous characters are equal, assign S to matchScore (1), else to mismatchScore (-1)
+            bool charsMatch = SeqA[iA - 1] == SeqB[iB - 1];
+            int S = charsMatch ? matchScore : -mismatchScore;
             // if the previous diagonal cell + S is equal to the iterated cell, then this must be the optimal way
             if (nwMatrix[iA][iB] == (nwMatrix[iA - 1][iB - 1] + S )) {
                 outA += SeqA[iA - 1];
@@ -286,7 +288,9 @@ int main() {
         int lengthA = SeqA.size(), lengthB = SeqB.size();
 
         // set gap score
-        gapPenalty = 5;
+        gapPenalty = 1;
+        matchScore = 1;
+        mismatchScore = 1;
 
         // get time at beginning of alignment
         auto t1 = high_resolution_clock::now();
